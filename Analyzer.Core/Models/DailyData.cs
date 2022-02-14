@@ -34,7 +34,7 @@ namespace Analyzer.Core.Models
 
         public decimal? Loss => change < 0 ? change * -1 : 0;
 
-        private decimal? GetAvgGain()
+        public decimal? GetAvgGain()
         {
             if (position < 15)
             {
@@ -57,7 +57,7 @@ namespace Analyzer.Core.Models
             }
         }
 
-        private decimal? GetAvgLoss()
+        public decimal? GetAvgLoss()
         {
             if (position < 15)
             {
@@ -82,7 +82,7 @@ namespace Analyzer.Core.Models
 
         public decimal? GetRSI() => 100 * (GetAvgGain() / (GetAvgGain() + GetAvgLoss()));
 
-        //private decimal? GetRS() => GetAvgGain() / GetAvgLoss();        
+        // this.Close/Prev.Close > 1.9 OR this.Close/Prev.Close < 0.55 , highlight! 
     }
 }
 

@@ -6,10 +6,11 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Analyzer.Core.Models;
+using Analyzer.Core.Interfaces;
 
 namespace StockApis.Alphavantage
 {
-    public class AlphavantageApi
+    public class AlphavantageApi : IStockApi
     {
         private readonly string _apiKey;
         private readonly RestClient _restClient; 
