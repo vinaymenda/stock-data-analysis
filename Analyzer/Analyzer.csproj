@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\StockApis.Alphavantage\StockApis.Alphavantage.csproj" />
+    <ProjectReference Include="..\StockApis.ExcelSheets\StockApis.ExcelSheets.csproj" />
   </ItemGroup>
 
 </Project>

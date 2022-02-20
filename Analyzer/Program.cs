@@ -2,6 +2,7 @@
 using Analyzer.Core.Models;
 using CsvHelper;
 using StockApis.Alphavantage;
+using StockApis.ExcelSheets;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,16 +17,16 @@ namespace Analyzer
     {
         static async Task Main(string[] args)
         {
-            var lines =  File.ReadAllLines(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\App_Data\_in\input.csv");
-            var api = new AlphavantageApi("WNVSX2JIWEYIJHOK");
-            foreach (var line in lines)
+            using (var excelApi = new ExcelSheetsApi())
             {
-                var part1 = line.Split(",")[0];
-                var part2 = line.Split(",")[1];
-                try
+                var stocks = await excelApi.GetAllStocks();
+
+                foreach(var stock in stocks)
                 {
-                    var items = await api.GetTimeSeries($"{part1}.BSE");
-                    Console.WriteLine($"Found {items.Count()} points for {part1}");
+                    Console.WriteLine($"Processing stock [{stock}]");
+                    var items = await excelApi.GetTimeSeries(stock);
+
+                    Console.WriteLine($"Found {items.Count()} points for {stock}");
                     var refService = new ReferenceService(items);
                     Console.WriteLine($"Reference Points: ");
                     foreach (var dt in refService.GetReferences())
@@ -38,15 +39,9 @@ namespace Analyzer
                     {
                         Console.WriteLine(point.Date.Value.ToString("dd-MM-yyyy"));
                     }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error for {part1}: {ex.Message}");                   
-                }
-            }
+                }               
+            }         
 
-
-            
         }
 
         static void Print(IEnumerable<DailyData> items)

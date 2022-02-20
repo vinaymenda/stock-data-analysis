@@ -8,6 +8,8 @@ namespace Analyzer.Core.Interfaces
 {
     public interface IStockApi
     {
+        Task<IEnumerable<string>> GetAllStocks();
+
         Task<IEnumerable<DailyData>> GetTimeSeries(string symbol);
     }
 }

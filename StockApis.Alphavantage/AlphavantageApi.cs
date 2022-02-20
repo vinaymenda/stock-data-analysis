@@ -20,6 +20,11 @@ namespace StockApis.Alphavantage
             _restClient = new RestClient("https://www.alphavantage.co/query");
         }
 
+        public Task<IEnumerable<string>> GetAllStocks()
+        {
+            throw new NotImplementedException();
+        }
+
         public async Task<IEnumerable<DailyData>> GetTimeSeries(string symbol)
         {
             var query = $"?function=TIME_SERIES_DAILY&symbol={symbol}&outputsize=compact&apikey={_apiKey}";
