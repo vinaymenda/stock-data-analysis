@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Analyzer.Core;
+using Newtonsoft.Json;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -12,7 +13,7 @@ namespace StockApis.ExcelSheets
     public class GoogleDriveHelper
     {
         private static RestClient client = new RestClient("https://www.googleapis.com/drive/v2");
-        private const string apiKey = "AIzaSyBMz5J-WvSoo275NXYn5HrAJt1zoeYF2HY";        
+        private static string apiKey = ConfigurationSettings.Instance.Get("apiKey");        
 
         public static async Task DownloadFiles(string driveFolder, string downloadLocation)
         {
