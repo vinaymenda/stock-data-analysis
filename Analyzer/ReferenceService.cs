@@ -14,7 +14,7 @@ namespace Analyzer
         public ReferenceService(IEnumerable<DailyData> points)
         {
             _dataPoints = points;
-            _waves = FindWaves(_dataPoints.Skip(30).Take(1).First());
+            _waves = FindWaves(_dataPoints.Skip(30).Take(1).FirstOrDefault());
         }
 
         List<Wave> FindWaves(DailyData start)
@@ -42,13 +42,13 @@ namespace Analyzer
             {
                 // wave started for RSI
                 var wave = new Wave();
-                while (dataPoint.GetRSI() < 30) { wave.Add(dataPoint); dataPoint = dataPoint.Next; }
+                while (dataPoint != null && dataPoint.GetRSI() <= 30) { wave.Add(dataPoint); dataPoint = dataPoint.Next; }
 
                 // wave has completed but we need to ensure there are at least 5 points > 30
                 if (AreAbove(dataPoint, 30, 5))
                 {
                     // the wave has truly completed
-                    return wave; ;
+                    return wave; 
                 }
                 else
                 {
@@ -70,8 +70,8 @@ namespace Analyzer
             DailyData dataPoint = reference;
             while (counter <= numberOfPoints)
             {
+                if (dataPoint == null) { break; }
                 if (dataPoint.GetRSI() <= cutoff) { return false; }
-
                 dataPoint = dataPoint.Next;
                 counter++;
             }

@@ -19,9 +19,9 @@ namespace Analyzer
         {
             using (var excelApi = new ExcelSheetsApi())
             {
-                var stocks = await excelApi.GetAllStocks();
+                var stocks = await excelApi.GetAllStocks(); // new List<string>() { "539834" }
 
-                foreach(var stock in stocks)
+                Parallel.ForEach(stocks, async (stock) =>
                 {
                     Console.WriteLine($"Processing stock [{stock}]");
                     var items = await excelApi.GetTimeSeries(stock);
@@ -39,9 +39,9 @@ namespace Analyzer
                     {
                         Console.WriteLine(point.Date.Value.ToString("dd-MM-yyyy"));
                     }
-                }               
-            }         
-
+                }
+                );             
+            }       
         }
 
         static void Print(IEnumerable<DailyData> items)

@@ -80,7 +80,15 @@ namespace Analyzer.Core.Models
             }
         }
 
-        public decimal? GetRSI() => 100 * (GetAvgGain() / (GetAvgGain() + GetAvgLoss()));
+        public decimal? GetRSI()
+        {
+            var avgGain = GetAvgGain();
+            var avgLoss = GetAvgLoss();
+
+            if (avgGain == 0) { return 0; }
+            if (avgGain + avgLoss == 0) { return null; } 
+            return 100 * ( avgGain/ (avgGain + avgLoss));
+        }
 
         // this.Close/Prev.Close > 1.9 OR this.Close/Prev.Close < 0.55 , highlight! 
     }
