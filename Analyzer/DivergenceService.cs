@@ -7,26 +7,29 @@ namespace Analyzer
     {
         private IEnumerable<DailyData> _dataPoints;
         private ReferenceService _refService;
+        private string _stock;
 
-        public DivergenceService(IEnumerable<DailyData> dataPoints, ReferenceService referenceService)
+        public DivergenceService(string stock, IEnumerable<DailyData> dataPoints, ReferenceService referenceService)
         {
             _dataPoints = dataPoints;
             _refService = referenceService;
+            _stock = stock;
         }
 
-        public IEnumerable<DailyData> GetDivergentPoints()
+        public IEnumerable<DivergencePoint> GetDivergentPoints()
         {
-            var divergentPoints = new List<DailyData>();
+            var divergentPoints = new List<DivergencePoint>();
             foreach (var pt in _dataPoints)
             {
                 var reference = _refService.GetReference(pt);
                 if (reference == null) { continue; }
                 var acceptablePrice = reference.Close + (0.01m * reference.Close);
-                var acceptableRSI = reference.GetRSI() + (0.05m * reference.GetRSI());
+                var acceptableRSI = 30m;  
                 if (pt.Close < acceptablePrice && pt.GetRSI() > acceptableRSI
                     && (pt.Position - reference.Position >= 5))
                 {
-                    divergentPoints.Add(pt);
+                    var divergence = new DivergencePoint() { DataPoint = pt, Reference = reference, Stock = _stock };
+                    divergentPoints.Add(divergence);
                 }
             }
             return divergentPoints;
