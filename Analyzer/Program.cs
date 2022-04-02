@@ -24,36 +24,41 @@ namespace Analyzer
 
             using (var excelApi = new ExcelSheetsApi())
             {
-                var stocks = await excelApi.GetAllStocks(); 
+                var stocks = await  excelApi.GetAllStocks(); 
 
-                //venkys?
-                // 
                 Parallel.ForEach(stocks,
                     new ParallelOptions() { MaxDegreeOfParallelism = 10 },
                     async (stock) =>
                 {
-                    Console.WriteLine($"Processing stock [{stock}]");
-                    var items = await excelApi.GetTimeSeries(stock);
-
-                    //Console.WriteLine($"Found {items.Count()} points for {stock}");
-                    var refService = new ReferenceService(items);
-                    //Console.WriteLine($"Reference Points: ");
-                    //foreach (var dt in refService.GetReferences())
-                    //{
-                    //    Console.WriteLine(dt.Value.ToString("dd-MM-yyyy"));
-                    //}
-                    var points = new DivergenceService(stock, items, refService).GetDivergentPoints();
-                    //Console.WriteLine($"Divergent Points: ");
-                    //foreach (var point in points)
-                    //{
-                    //    Console.WriteLine(point.Date.Value.ToString("dd-MM-yyyy"));
-                    //}
-                    var shortListedPoints = points.Where(p => p.DataPoint.Date >= DateTime.Today.AddDays(-15));
-                    if (shortListedPoints.Count() > 0)
+                    try
                     {
-                        Console.WriteLine($"Divergence found for {stock}: {string.Join(",", shortListedPoints.Select(p => p.DataPoint.Date.Value.ToString("dd-MM-yyyy")))}");
+                        Console.WriteLine($"Processing stock [{stock}]");
+                        var items = await excelApi.GetTimeSeries(stock);
+
+                        //Console.WriteLine($"Found {items.Count()} points for {stock}");
+                        var refService = new ReferenceService(items);
+                        //Console.WriteLine($"Reference Points: ");
+                        //foreach (var dt in refService.GetReferences())
+                        //{
+                        //    Console.WriteLine(dt.Value.ToString("dd-MM-yyyy"));
+                        //}
+                        var points = new DivergenceService(stock, items, refService).GetDivergentPoints();
+                        //Console.WriteLine($"Divergent Points: ");
+                        //foreach (var point in points)
+                        //{
+                        //    Console.WriteLine(point.Date.Value.ToString("dd-MM-yyyy"));
+                        //}
+                        var shortListedPoints = points.Where(p => p.DataPoint.Date >= DateTime.Today.AddDays(-15));
+                        if (shortListedPoints.Count() > 0)
+                        {
+                            Console.WriteLine($"Divergence found for {stock}: {string.Join(",", shortListedPoints.Select(p => p.DataPoint.Date.Value.ToString("dd-MM-yyyy")))}");
+                        }
+                        resultSet.AddRange(shortListedPoints);
                     }
-                    resultSet.AddRange(shortListedPoints);
+                    catch(Exception ex)
+                    {
+                        Console.WriteLine($"Error processing stock {stock}: {ex}");
+                    }
                 }
                 );
             }
@@ -68,7 +73,7 @@ namespace Analyzer
             body.Append(@"<thead><th style=""border: 1px solid black; padding: 10px;"">Stock</th><th style=""border: 1px solid black; padding: 10px;"">Divergent Points</th><th style=""border: 1px solid black; padding: 10px;"">Reference Points</th></thead>");
 
             var groups = points.GroupBy(p => p.Stock);
-            foreach(var group in groups)
+            foreach (var group in groups)
             {
                 body.Append("<tr>");
                 body.Append($"<td style='border: 1px solid black; padding: 10px;'>{group.Key}</td>");
@@ -76,7 +81,7 @@ namespace Analyzer
                 body.Append($"<td style='border: 1px solid black; padding: 10px;'>{string.Join(", ", group.Select(p => p.Reference.Date.Value).Distinct().Select(d => d.ToString("dd -MM-yyyy")))}</td>");
                 body.Append("</tr>");
 
-            }                         
+            }
             body.Append("</table>");
 
             var mailMessage = new MailMessage();

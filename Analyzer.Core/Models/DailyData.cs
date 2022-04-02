@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Analyzer.Core.Models
@@ -88,6 +89,27 @@ namespace Analyzer.Core.Models
             if (avgGain == 0) { return 0; }
             if (avgGain + avgLoss == 0) { return null; } 
             return 100 * ( avgGain/ (avgGain + avgLoss));
+        }
+
+        private decimal? GetRSIChange()
+            => this.GetRSI() - Previous?.GetRSI();      
+        
+        public decimal? GetTurbulenceRatio(DailyData reference)
+        {            
+            if (reference?.Next == null) { return null; }
+            
+            var eligiblePoints = new List<DailyData>() { this };
+            var dp = reference.Next;
+            while (dp != this)             
+            {
+                eligiblePoints.Add(dp);
+                dp = dp.Next;
+            }
+
+            var avgRSIChange = eligiblePoints.Average(p => p.GetRSIChange());
+            var avgStockChange = eligiblePoints.Average(p => p.change);
+
+            return avgRSIChange / avgStockChange;
         }
 
         // this.Close/Prev.Close > 1.9 OR this.Close/Prev.Close < 0.55 , highlight! 

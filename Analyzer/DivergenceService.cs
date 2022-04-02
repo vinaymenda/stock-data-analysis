@@ -23,10 +23,8 @@ namespace Analyzer
             {
                 var reference = _refService.GetReference(pt);
                 if (reference == null) { continue; }
-                var acceptablePrice = reference.Close + (0.01m * reference.Close);
-                var acceptableRSI = 30m;  
-                if (pt.Close < acceptablePrice && pt.GetRSI() > acceptableRSI
-                    && (pt.Position - reference.Position >= 5))
+                var turbulenceRatio = pt.GetTurbulenceRatio(reference);
+                if (turbulenceRatio > 20)
                 {
                     var divergence = new DivergencePoint() { DataPoint = pt, Reference = reference, Stock = _stock };
                     divergentPoints.Add(divergence);
