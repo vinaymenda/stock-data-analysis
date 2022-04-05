@@ -109,7 +109,7 @@ namespace Analyzer.Core.Models
             var avgRSIChange = eligiblePoints.Average(p => p.GetRSIChange());
             var avgStockChange = eligiblePoints.Average(p => p.change);
 
-            return avgRSIChange / avgStockChange;
+            return avgStockChange != 0 ? avgRSIChange / avgStockChange : 0;
         }
 
         // this.Close/Prev.Close > 1.9 OR this.Close/Prev.Close < 0.55 , highlight! 
