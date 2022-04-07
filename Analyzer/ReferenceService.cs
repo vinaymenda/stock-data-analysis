@@ -14,7 +14,7 @@ namespace Analyzer
         public ReferenceService(IEnumerable<DailyData> points)
         {
             _dataPoints = points;
-            _waves = FindWaves(_dataPoints.OrderBy(dt => dt.Date).Skip(30).FirstOrDefault()); // .FirstOrDefault(dt => dt.Date >= DateTime.Today.AddMonths(-2)));            
+            _waves = FindWaves(_dataPoints.OrderBy(dt => dt.Date).FirstOrDefault(dt => dt.Date >= DateTime.Today.AddMonths(-3)));
         }
 
         List<Wave> FindWaves(DailyData start)

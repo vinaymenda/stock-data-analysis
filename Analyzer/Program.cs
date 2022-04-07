@@ -36,7 +36,8 @@ namespace Analyzer
                         var items = await excelApi.GetTimeSeries(stock);
 
                         //Console.WriteLine($"Found {items.Count()} points for {stock}");
-                        var refService = new ReferenceService(items);
+                        var refService = new ReferenceService(items); 
+
                         //Console.WriteLine($"Reference Points: ");
                         //foreach (var dt in refService.GetReferences())
                         //{
@@ -63,6 +64,7 @@ namespace Analyzer
                 );
             }
 
+            // add closing for the first & last divergent point
             await SendReportAsync(resultSet);
         }
 

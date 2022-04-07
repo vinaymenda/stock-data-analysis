@@ -22,15 +22,23 @@ namespace Analyzer
             foreach (var pt in _dataPoints)
             {
                 var reference = _refService.GetReference(pt);
-                if (reference == null) { continue; }
-                var turbulenceRatio = pt.GetTurbulenceRatio(reference);
-                if (turbulenceRatio > 20)
+                if (reference == null) { continue; }                
+                var turbulenceRatio = pt.GetTurbulenceRatio(reference);                                   
+                if (SatisfiesDivergence(pt, reference) && turbulenceRatio > 20)
                 {
                     var divergence = new DivergencePoint() { DataPoint = pt, Reference = reference, Stock = _stock };
                     divergentPoints.Add(divergence);
                 }
             }
             return divergentPoints;
+        }
+
+        public bool SatisfiesDivergence(DailyData pt, DailyData reference)
+        {
+            var acceptablePrice = reference.Close + (0.01m * reference.Close);
+            var acceptableRSI = 30m;
+            return pt.Close < acceptablePrice && pt.GetRSI() > acceptableRSI
+                    && (pt.Position - reference.Position >= 5);
         }
     }
 }
