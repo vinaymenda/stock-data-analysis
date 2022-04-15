@@ -23,7 +23,11 @@ namespace Analyzer.Core.Models
 
         public decimal? Min() => points.Min(wp => wp.GetRSI());
 
+        public decimal? Max() => points.Max(wp => wp.GetRSI());
+
         public DailyData Lowest() => points.FirstOrDefault(wp => wp.GetRSI() <= Min());
+
+        public DailyData Highest() => points.FirstOrDefault(wp => wp.GetRSI() >= Max());
 
         public DailyData First() => points.OrderBy(p => p.Position).FirstOrDefault();
 

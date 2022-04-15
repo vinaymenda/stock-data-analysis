@@ -94,7 +94,7 @@ namespace Analyzer.Core.Models
         private decimal? GetRSIChange()
             => this.GetRSI() - Previous?.GetRSI();
 
-        public decimal? GetTurbulenceRatio(DailyData reference)
+        public decimal? GetBullishTurbulenceRatio(DailyData reference)
         {
             if (reference?.Next == null) { return null; }
 
@@ -106,19 +106,46 @@ namespace Analyzer.Core.Models
                 dp = dp.Next;
             }
 
-            var avgRSIChange = eligiblePoints.Average(p => p.GetRSIChange());
-            var avgStockChange = eligiblePoints.Average(p => p.change);
-
-            if (avgStockChange >= 0)
+            var stockChange = this.Close - reference.Close;           
+            if (stockChange >= 0)
             {
+                var avgRSIChange = eligiblePoints.Average(p => p.GetRSIChange());
+                var avgStockChange = eligiblePoints.Average(p => p.change);
                 // +ve change in stock, check the ratio
                 return Math.Abs((decimal)(avgStockChange != 0 ? avgRSIChange / avgStockChange : 0));
             }
             else
             {
                 // -ve change in stock, only check if RSI has increased enough
-                var thresholdRSI = 1.5m * reference.GetRSI();
-                return (avgRSIChange >= thresholdRSI) ? decimal.MaxValue : decimal.MinValue;
+                var thresholdRSI = 1.5m * reference.GetRSI();                
+                return (this.GetRSI() >= thresholdRSI) ? decimal.MaxValue : decimal.MinValue;
+            }
+        }
+
+        public decimal? GetBearishTurbulenceRatio(DailyData reference)
+        {
+            if (reference?.Next == null) { return null; }
+
+            var eligiblePoints = new List<DailyData>() { this };
+            var dp = reference.Next;
+            while(dp != this)
+            {
+                eligiblePoints.Add(dp);
+                dp = dp.Next;
+            }
+
+            var stockChange = this.Close - reference.Close;
+            if(stockChange >= 0)
+            {
+                // only look at RSI
+                var thresholdRSI = (2/3) * reference.GetRSI();
+                return (this.GetRSI() <= thresholdRSI) ? decimal.MaxValue : decimal.MinValue;
+            }
+            else
+            {
+                var avgRSIChange = eligiblePoints.Average(p => p.GetRSIChange());
+                var avgStockChange = eligiblePoints.Average(p => p.change);
+                return Math.Abs((decimal)(avgStockChange != 0 ? avgRSIChange / avgStockChange : 0));
             }
         }
 

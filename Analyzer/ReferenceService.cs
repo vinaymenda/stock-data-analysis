@@ -8,51 +8,70 @@ namespace Analyzer
 {
     public class ReferenceService
     {
+        public const decimal LOWER_CUTOFF = 25m;
+        public const decimal HIGHER_CUTOFF = 75m;
         private IEnumerable<DailyData> _dataPoints;
-        private IEnumerable<Wave> _waves;
+        private IEnumerable<Wave> _troughWaves;
+        private IEnumerable<Wave> _crestWaves;
 
         public ReferenceService(IEnumerable<DailyData> points)
         {
             _dataPoints = points;
-            _waves = FindWaves(_dataPoints.OrderBy(dt => dt.Date).FirstOrDefault(dt => dt.Date >= DateTime.Today.AddMonths(-3)));
+            var startPoint = _dataPoints.OrderBy(dt => dt.Date).FirstOrDefault(dt => dt.Date >= DateTime.Today.AddMonths(-3));
+            _troughWaves = FindTroughWaves(startPoint);
+            _crestWaves = FindCrestWaves(startPoint);
         }
 
-        List<Wave> FindWaves(DailyData start)
+        List<Wave> FindTroughWaves(DailyData start)
         {
             var waves = new List<Wave>();
 
-            var point = start;
-            var wave = FindWave(start);
+            var wave = FindTroughWave(start);
             while (wave != null)
             {
                 waves.Add(wave);
-                point = wave.Last().Next;
-                wave = FindWave(point);
+                var point = wave.Last().Next;
+                wave = FindTroughWave(point);
             }
 
             return waves;
         }
 
-        Wave FindWave(DailyData item)
+        List<Wave> FindCrestWaves(DailyData start)
+        {
+            var waves = new List<Wave>();
+
+            var wave = FindCrestWave(start);
+            while (wave != null)
+            {
+                waves.Add(wave);
+                var point = wave.Last().Next;
+                wave = FindCrestWave(point);
+            }
+
+            return waves;
+        }
+
+        Wave FindTroughWave(DailyData item)
         {
             var dataPoint = item;
-            while (dataPoint != null && dataPoint.GetRSI() > 25) { dataPoint = dataPoint.Next; }
+            while (dataPoint != null && dataPoint.GetRSI() > LOWER_CUTOFF) { dataPoint = dataPoint.Next; }
 
             if (dataPoint != null)
             {
                 // wave started for RSI
                 var wave = new Wave();
-                while (dataPoint != null && dataPoint.GetRSI() <= 25) { wave.Add(dataPoint); dataPoint = dataPoint.Next; }
+                while (dataPoint != null && dataPoint.GetRSI() <= LOWER_CUTOFF) { wave.Add(dataPoint); dataPoint = dataPoint.Next; }
 
                 // wave has completed but we need to ensure there are at least 5 points > 30
-                if (AreAbove(dataPoint, 25, 5))
+                if (AreBeyond(dataPoint, LOWER_CUTOFF, 5))
                 {
                     // the wave has truly completed
-                    return wave; 
+                    return wave;
                 }
                 else
                 {
-                    var nextWave = FindWave(dataPoint);
+                    var nextWave = FindTroughWave(dataPoint);
                     wave.Add(nextWave);
                     return wave;
                 }
@@ -64,31 +83,66 @@ namespace Analyzer
             }
         }
 
-        bool AreAbove(DailyData reference, decimal cutoff, int numberOfPoints)
+        Wave FindCrestWave(DailyData item)
+        {
+            var dataPoint = item;
+            while (dataPoint != null && dataPoint.GetRSI() < HIGHER_CUTOFF) { dataPoint = dataPoint.Next; }
+
+            if (dataPoint != null)
+            {
+                // wave started for RSI
+                var wave = new Wave();
+                while (dataPoint != null && dataPoint.GetRSI() >= HIGHER_CUTOFF) { wave.Add(dataPoint); dataPoint = dataPoint.Next; }
+
+                // wave has completed but we need to ensure there are at least 5 points below cutoff
+                if (AreBeyond(dataPoint, HIGHER_CUTOFF, 5, false))
+                {
+                    // the wave has truly completed
+                    return wave;
+                }
+                else
+                {
+                    var nextWave = FindCrestWave(dataPoint);
+                    wave.Add(nextWave);
+                    return wave;
+                }
+            }
+            else
+            {
+                // no reference found
+                return null;
+            }
+        }
+
+        bool AreBeyond(DailyData reference, decimal cutoff, int numberOfPoints, bool upwards = true)
         {
             int counter = 1;
             DailyData dataPoint = reference;
             while (counter <= numberOfPoints)
             {
                 if (dataPoint == null) { break; }
-                if (dataPoint.GetRSI() <= cutoff) { return false; }
+                if (upwards) { if (dataPoint.GetRSI() <= cutoff) { return false; } }
+                else { if (dataPoint.GetRSI() >= cutoff) { return false; } }
                 dataPoint = dataPoint.Next;
                 counter++;
             }
             return true;
         }
 
-        public DailyData GetReference(DateTime? dt)
-        {
-            return _waves.OrderByDescending(x => x.First().Date)
+        public DailyData GetTroughReference(DateTime? dt)
+            => _troughWaves.OrderByDescending(x => x.First().Date)
                 .FirstOrDefault(wave => wave.Last().Date < dt)
                 ?.Lowest();
-        }
 
-        public DailyData GetReference(DailyData pt)
-            => GetReference(pt.Date);
+        public DailyData GetCrestReference(DateTime? dt)
+            => _crestWaves.OrderByDescending(x => x.First().Date)
+                .FirstOrDefault(wave => wave.Last().Date < dt)
+                ?.Highest();
 
-        public IEnumerable<DateTime?> GetReferences()
-            => _waves.Select(wv => wv.Lowest().Date);
+        public DailyData GetTroughReference(DailyData pt)
+            => GetTroughReference(pt.Date);
+
+        public DailyData GetCrestReference(DailyData pt)
+            => GetCrestReference(pt.Date);
     }
 }
