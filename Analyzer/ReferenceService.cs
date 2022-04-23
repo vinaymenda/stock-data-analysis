@@ -14,10 +14,13 @@ namespace Analyzer
         private IEnumerable<Wave> _troughWaves;
         private IEnumerable<Wave> _crestWaves;
 
-        public ReferenceService(IEnumerable<DailyData> points)
+        public ReferenceService(IEnumerable<DailyData> points, DateTime? startFrom)
         {
-            _dataPoints = points;
-            var startPoint = _dataPoints.OrderBy(dt => dt.Date).FirstOrDefault(dt => dt.Date >= DateTime.Today.AddMonths(-3));
+            _dataPoints = points;            
+            var startPoint = _dataPoints
+                .OrderBy(dt => dt.Date)
+                .FirstOrDefault(dt => dt.Date >= (startFrom.HasValue ? startFrom.Value : DateTime.Today.AddMonths(-3))
+                                && dt.Position >= 20);
             _troughWaves = FindTroughWaves(startPoint);
             _crestWaves = FindCrestWaves(startPoint);
         }

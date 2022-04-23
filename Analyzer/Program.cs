@@ -2,6 +2,7 @@
 using Analyzer.Core.Models;
 using Analyzer.Core.Services;
 using CsvHelper;
+using ServiceStack;
 using StockApis.Alphavantage;
 using StockApis.ExcelSheets;
 using System;
@@ -20,13 +21,18 @@ namespace Analyzer
     {
         static async Task Main(string[] args)
         {
+            // inputs
+            DateTime? startReferenceFrom = null;
+            DateTime? startDivergenceFrom = startReferenceFrom.HasValue ?  startReferenceFrom.Value.AddDays(60) : DateTime.Today.AddDays(-15);
+            Operations? operation = Operations.FindDivergenceDates;
+            string path = @"D:\per\candle-data\ratios.csv";
+
             var bullishResultSet = new List<DivergencePoint>();
-            var bearishResultSet = new List<DivergencePoint>();
-        
+            var bearishResultSet = new List<DivergencePoint>();       
 
             using (var excelApi = new ExcelSheetsApi())
             {
-                var stocks = await  excelApi.GetAllStocks(); 
+                var stocks = await excelApi.GetAllStocks();
 
                 Parallel.ForEach(stocks,
                     new ParallelOptions() { MaxDegreeOfParallelism = 10 },
@@ -36,24 +42,13 @@ namespace Analyzer
                     {
                         Console.WriteLine($"Processing stock [{stock}]");
                         var items = await excelApi.GetTimeSeries(stock);
-
-                        //Console.WriteLine($"Found {items.Count()} points for {stock}");
-                        var refService = new ReferenceService(items); 
-
-                        //Console.WriteLine($"Reference Points: ");
-                        //foreach (var dt in refService.GetReferences())
-                        //{
-                        //    Console.WriteLine(dt.Value.ToString("dd-MM-yyyy"));
-                        //}
+                        var refService = new ReferenceService(items, startReferenceFrom); 
+                        
                         var bullishPoints = new DivergenceService(stock, items, refService).GetBullishDivergentPoints();
                         var bearishPoints = new DivergenceService(stock, items, refService).GetBearishDivergentPoints();
-                        //Console.WriteLine($"Divergent Points: ");
-                        //foreach (var point in points)
-                        //{
-                        //    Console.WriteLine(point.Date.Value.ToString("dd-MM-yyyy"));
-                        //}
-                        var shortListedBullishPoints = bullishPoints.Where(p => p.DataPoint.Date >= DateTime.Today.AddDays(-15));
-                        var shortListedBearishPoints = bearishPoints.Where(p => p.DataPoint.Date >= DateTime.Today.AddDays(-15));
+                        
+                        var shortListedBullishPoints = bullishPoints.Where(p => p.DataPoint.Date >= startDivergenceFrom);
+                        var shortListedBearishPoints = bearishPoints.Where(p => p.DataPoint.Date >= startDivergenceFrom);
                         if (shortListedBullishPoints.Count() > 0)
                         {
                             Console.WriteLine($"Divergence found for {stock}: {string.Join(",", shortListedBullishPoints.Select(p => p.DataPoint.Date.Value.ToString("dd-MM-yyyy")))}");
@@ -73,9 +68,37 @@ namespace Analyzer
                 );
             }
 
-            // add closing for the first & last divergent point
-            await SendReportAsync(bullishResultSet, "Utha lo!");
-            await SendReportAsync(bearishResultSet, "Bech do!");
+
+            switch(operation)
+            {              
+                case Operations.FindDivergenceStocks:
+                    var list = new List<TrendIndicator>();
+                    
+                    var groups = bullishResultSet.GroupBy(x => x.DataPoint.Date);
+
+                    foreach(var group in groups)
+                    {
+                        var listOfStocks = group.AsEnumerable();
+                        var ti = new TrendIndicator()
+                        {
+                            Date = group.Key.Value,
+                            BullishIndicator = listOfStocks.Sum(x => x.DataPoint.Close),
+                            BullishStocks = string.Join("; ", listOfStocks.Select(x => x.Stock))
+                        };
+                        list.Add(ti);
+                    }
+
+                    File.WriteAllText(path, list.ToCsv());
+
+                    break;
+
+                case Operations.FindDivergenceDates:
+                default:
+                    // add closing for the first & last divergent point
+                    await SendReportAsync(bullishResultSet, "Utha lo!");
+                    await SendReportAsync(bearishResultSet, "Bech do!");
+                    break;
+            }            
         }
 
         public static async Task SendReportAsync(List<DivergencePoint> points, string subject)
