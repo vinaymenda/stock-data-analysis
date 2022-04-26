@@ -14,11 +14,13 @@ namespace StockApis.ExcelSheets
     public class ExcelSheetsApi : IStockApi, IDisposable
     {
         private List<DataRow> _rows;
+        private List<Stock> _numberOfShares;        
 
         public ExcelSheetsApi()
         {
             Task.Run(async () => await GoogleDriveHelper.DownloadFiles("1JXEqnLV1cFpthoN6RI67LhRVUCJKhdy2", "App_data")).Wait();
             _rows = GetDataRows();
+            _numberOfShares = GetNumberOfShares();
         }
 
         public void Dispose()
@@ -58,33 +60,61 @@ namespace StockApis.ExcelSheets
             return dataPoints;
         }
 
-        public async Task<IEnumerable<string>> GetAllStocks()
+        public async Task<IEnumerable<Stock>> GetAllStocks()
         {
-            return _rows
+            var stocks = new List<Stock>();
+            var stockNames = _rows
                 .Select(row => row.ItemArray[1].ToString())
                 .Distinct();
+            foreach(var name in stockNames)
+            {
+                var stock = new Stock()
+                {
+                    Code = name,
+                    NumberOfShares = _numberOfShares.FirstOrDefault(x => x.Code == name)?.NumberOfShares
+                };
+                stocks.Add(stock);
+            }
+            return stocks;
         }
 
         private List<DataRow> GetDataRows()
         {
             var rows = new List<DataRow>();
+            AddRows(rows, "Daily Data - BSE - 2018");
+            AddRows(rows, "Daily Data - BSE - 2019");
+            AddRows(rows, "Daily Data - BSE - 2020");
+            AddRows(rows, "Daily Data - BSE - 2021");
+            for(int i = 1; i <= DateTime.Today.Month; i++)
+            {
+                AddRows(rows, $"Daily Data - BSE - 2022-{i:00}");                
+            }
+            return rows;
+        }
 
-            var dt = GetDataTable(@"App_data\Daily Data - BSE - 2021.xlsx");
-            foreach(DataRow row in dt.Rows)
+        private void AddRows(List<DataRow> rows, string fileName)
+        {
+            var dt = GetDataTable($"App_data\\{fileName}.xlsx");
+            foreach (DataRow row in dt.Rows)
             {
                 rows.Add(row);
             }
+        }
 
-            for(int i = 1; i <= DateTime.Today.Month; i++)
+        private List<Stock> GetNumberOfShares()
+        {
+            var stocks = new List<Stock>();
+            var dt = GetDataTable(@"App_data\_in\numberofshares.xlsx");
+            foreach(DataRow row in dt.Rows)
             {
-                dt = GetDataTable($"App_data\\Daily Data - BSE - 2022-{i:00}.xlsx");
-                foreach(DataRow row in dt.Rows)
+                var stock = new Stock()
                 {
-                    rows.Add(row);
-                }
+                    Code = row.ItemArray[0].ToString(),
+                    NumberOfShares = Convert.ToInt64(row.ItemArray[1])
+                };
+                stocks.Add(stock);
             }
-
-            return rows;
+            return stocks;
         }
 
         private DataTable GetDataTable(string fileName)

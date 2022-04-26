@@ -7,14 +7,14 @@
 
   <ItemGroup>
     <None Remove="appsettings.json" />
-    <None Remove="App_Data\_in\input.csv" />
+    <None Remove="App_Data\_in\numberofshares.xlsx" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="App_Data\_in\input.csv">
+    <Content Include="App_Data\_in\numberofshares.xlsx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

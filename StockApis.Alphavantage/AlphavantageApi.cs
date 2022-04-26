@@ -20,7 +20,7 @@ namespace StockApis.Alphavantage
             _restClient = new RestClient("https://www.alphavantage.co/query");
         }
 
-        public Task<IEnumerable<string>> GetAllStocks()
+        public Task<IEnumerable<Stock>> GetAllStocks()
         {
             throw new NotImplementedException();
         }

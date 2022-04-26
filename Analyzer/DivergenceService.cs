@@ -7,9 +7,9 @@ namespace Analyzer
     {
         private IEnumerable<DailyData> _dataPoints;
         private ReferenceService _refService;
-        private string _stock;
+        private Stock _stock;
 
-        public DivergenceService(string stock, IEnumerable<DailyData> dataPoints, ReferenceService referenceService)
+        public DivergenceService(Stock stock, IEnumerable<DailyData> dataPoints, ReferenceService referenceService)
         {
             _dataPoints = dataPoints;
             _refService = referenceService;

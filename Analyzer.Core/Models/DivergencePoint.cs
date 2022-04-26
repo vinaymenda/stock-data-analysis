@@ -6,7 +6,7 @@ namespace Analyzer.Core.Models
 {
     public class DivergencePoint
     {
-        public string Stock { get; set; }
+        public Stock Stock { get; set; }
 
         public DailyData DataPoint { get; set; }
 
